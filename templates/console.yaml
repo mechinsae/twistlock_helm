@@ -1,0 +1,304 @@
+{{- if eq .Values.deploymentMethod "ReplicationController"}}apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: twistlock-console
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    name: twistlock-console
+{{- else}}apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- if .Values.customerID }}
+  name: {{ .Values.customerID }}
+  {{- else }}
+  name: twistlock-console
+  {{- end }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- if .Values.customerID }}
+    name: {{ .Values.customerID }}
+    {{- else }}
+    name: twistlock-console
+    {{- end }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- if .Values.customerConsoleName }}
+      name: {{ .Values.customerConsoleName }}
+      {{- else }}
+      name: twistlock-console
+      {{- end }}
+{{- if .Values.labels }}
+      {{- range .Values.labels }}
+      {{ . -}}
+      {{- end }}
+{{- end}}
+  strategy:
+    type: Recreate
+{{- end}}
+  template:
+    metadata:
+      {{- if .Values.customerConsoleName }}
+      name: {{ .Values.customerConsoleName }}
+      {{- else }}
+      name: twistlock-console
+      {{- end }}
+      namespace: {{ .Values.namespace }}
+      labels:
+        {{- if .Values.customerConsoleName }}
+        name: {{ .Values.customerConsoleName }}
+        app: twistlock
+        {{- else }}
+        name: twistlock-console
+        {{- end }}
+{{- if .Values.labels }}
+        {{- range .Values.labels }}
+        {{ . -}}
+        {{- end }}
+{{- end}}
+    spec:
+      {{- if .Values.imagePullSecretsName }}
+      imagePullSecrets:
+      - name: {{ .Values.imagePullSecretsName }}
+      {{- end}}
+      restartPolicy: Always
+      {{- if .Values.SAAS_DEPLOYMENT }}
+      {{- else }}
+      serviceAccountName: twistlock-console
+      {{- end }}
+{{- if .Values.tolerations }}
+      tolerations:
+  {{- range $i, $toleration := .Values.tolerations }}{{ $first := 1 }}
+    {{- range $key, $val := $toleration }}
+      {{if eq $first 1 }}- {{ $key }}: {{ $val -}} {{ $first = 0 }}{{ else }}  {{ $key }}: {{ $val -}}{{- end }}
+    {{- end}}
+  {{- end}}
+{{- end}}
+      containers:
+      {{- if .Values.customerConsoleName }}
+      - name: {{ .Values.customerConsoleName }}
+      {{- else }}
+      - name: twistlock-console
+      {{- end }}
+        image: {{ .Values.consoleImageName }}
+        {{- if or .Values.SAAS_DEPLOYMENT .Values.limitMemory .Values.limitCPU }}
+        resources:
+        {{- end }}
+          {{- if or .Values.limitMemory .Values.limitCPU }}
+          limits:
+          {{- end }}
+            {{- if .Values.limitMemory }}
+            memory: "{{ .Values.limitMemory }}Mi"
+            {{- end }}
+            {{- if .Values.limitCPU }}
+            cpu: "{{ .Values.limitCPU }}m"
+            {{- end }}
+          {{- if .Values.SAAS_DEPLOYMENT }}
+          requests:
+            memory: "{{ .Values.requestMemory }}Mi"
+          {{- end }}
+        ports:
+        {{- if .Values.MANAGEMENT_PORT_HTTPS }}
+        - name: mgmt-https
+          containerPort: {{ .Values.MANAGEMENT_PORT_HTTPS }}
+        {{- end }}
+        - name: communication
+          containerPort: {{ .Values.COMMUNICATION_PORT }}
+        {{- if .Values.MANAGEMENT_PORT_HTTP }}
+        - name: mgmt-http
+          containerPort: {{ .Values.MANAGEMENT_PORT_HTTP }}
+        {{- end}}
+        {{- if .Values.DB_PORT }}
+        - name: db-port
+          containerPort: {{ .Values.DB_PORT }}
+        {{- end }}
+        {{- if .Values.METRICS_PORT }}
+        - name: metrics-port
+          containerPort: {{ .Values.METRICS_PORT }}
+        {{- end }}
+        env:
+        {{- if .Values.SAAS_DEPLOYMENT }}
+        - name: CWP_GCP_PUBSUB_SA
+          valueFrom:
+            secretKeyRef:
+              name: twistlock-console
+              key: gcp-pubsub-sa
+        - name: POSTGRESQL_RO_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: twistlock-console
+              key: psql-ro-connection-string
+        - name: POSTGRESQL_RW_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: twistlock-console
+              key: psql-rw-connection-string
+        {{- end }}
+        {{- if .Values.CONSOLE_CN }}
+        - name: CONSOLE_CN
+          value: "{{ .Values.CONSOLE_CN }}"
+        {{- end }}
+        {{- if .Values.CONSOLE_SAN }}
+        - name: CONSOLE_SAN
+          value: "{{ .Values.CONSOLE_SAN }}"
+        {{- end}}
+        - name: CONFIG_PATH
+          {{- if .Values.SAAS_DEPLOYMENT }}
+          value: /etc/twistlock/twistlock.cfg # in SaaS the .cfg is located inside the image and not on one of the k8s volumes in order to ensure its not overwritten when deploying the image on a k8s volume
+          {{- else }}
+          value: /data/config/twistlock.cfg
+          {{- end }}
+        - name: LOG_PROD
+          value: "true"
+        - name: DATA_RECOVERY_ENABLED
+          value: "{{ .Values.DATA_RECOVERY_ENABLED }}"
+        - name: COMMUNICATION_PORT
+          value: "{{ .Values.COMMUNICATION_PORT }}"
+        {{- if .Values.MANAGEMENT_PORT_HTTPS }}
+        - name: MANAGEMENT_PORT_HTTPS
+          value: "{{ .Values.MANAGEMENT_PORT_HTTPS }}"
+        {{- end }}
+        - name: MANAGEMENT_PORT_HTTP
+          value: "{{ .Values.MANAGEMENT_PORT_HTTP }}"
+        {{- if .Values.METRICS_PORT }}
+        - name: METRICS_PORT
+          value: "{{ .Values.METRICS_PORT }}"
+        {{- end }}
+        {{- if .Values.CONSOLE_PORTAL_SERVER_KEY }}
+        - name: CONSOLE_PORTAL_SERVER_CERT
+          value: "/var/lib/twistlock/secrets/console-cert.pem"
+        - name: CONSOLE_PORTAL_SERVER_KEY
+          value: "/var/lib/twistlock/secrets/console-key.pem"
+        {{- end}}
+        {{- if .Values.SAAS_DEPLOYMENT }}
+        - name: SAAS_DEPLOYMENT
+          value: "true"
+        - name: SAAS_ALLOWED_DOMAIN
+          value: "{{ .Values.SAAS_ALLOWED_DOMAIN }}"
+        - name: SAAS_CUSTOMER_ID
+          value: "{{ .Values.customerID }}"
+        - name: SAAS_PRISMA_ID
+          value: "{{ .Values.prismaID }}"
+        - name: SAAS_CUSTOMER_NAME
+          value: "{{ .Values.customerName }}"
+        - name: SAAS_PRISMA_API
+          value: "{{ .Values.SAAS_PRISMA_API }}"
+        - name: CCS_WEBHOOK_SUFFIX
+          value: "{{ .Values.CCS_WEBHOOK_SUFFIX }}"
+        - name: AGENTLESS_MAX_CONCURRENT_SCAN_RESULTS
+          value: "{{ .Values.AGENTLESS_MAX_CONCURRENT_SCAN_RESULTS }}"
+        - name: AGENTLESS_SCANNER_MAX_LIFETIME_SECONDS
+          value: "{{ .Values.AGENTLESS_SCANNER_MAX_LIFETIME_SECONDS }}"
+        - name: AGENTLESS_MAX_SCANNER_LOGS
+          value: "{{ .Values.AGENTLESS_MAX_SCANNER_LOGS }}"
+        - name: AGENTLESS_MAX_SCAN_WORKERS
+          value: "{{ .Values.AGENTLESS_MAX_SCAN_WORKERS }}"
+        - name: LAUNCH_DARKLY_API_KEY
+          value: "{{ .Values.LAUNCH_DARKLY_API_KEY }}"
+        - name: PKI_CA_CHAIN
+          value: "{{ .Values.PKI_CA_CHAIN }}"
+        {{- end}}
+        {{- if .Values.DISABLE_CONSOLE_CGROUP_LIMITS }}
+        - name: DISABLE_LIMITS
+          value: "{{ .Values.DISABLE_CONSOLE_CGROUP_LIMITS }}"
+        {{- end}}
+        {{- if .Values.FIPS_ENABLED }}
+        - name: FIPS_ENABLED
+          value: "{{ .Values.FIPS_ENABLED }}"
+        {{- end}}
+        {{- if .Values.CLUSTERED_DB_ENABLED }}
+        - name: CLUSTERED_DB_ENABLED
+          value: "true"
+        {{- end}}
+        securityContext:
+          {{- if .Values.consoleUser }}
+          runAsUser: {{ .Values.consoleUser }}
+          {{- end}}
+          readOnlyRootFilesystem: true
+          {{- if .Values.privileged }}
+          privileged: true
+          {{- end}}
+          {{- if .Values.selinux_type }}
+          seLinuxOptions:
+            type: {{ .Values.selinux_type }}
+          {{- end}}
+        volumeMounts:
+        {{- if .Values.SAAS_DEPLOYMENT }}
+        - name: console-temp-volume
+          mountPath: "/var/lib/twistlock" # nested volumes are not considered as best practice can be prone to race conditions - https://github.com/kubernetes/kubernetes/issues/71800
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock/db"
+          subPath: db # add subPaths to all mounts in the persistent volume so there will be a logical separation between the directories mounted on it
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock/certificates"
+          subPath: certificates
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock-backup"
+          subPath: twistlock-backup
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock/backup"
+          subPath: backup
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock/versioned-images"
+          subPath: versioned-images
+        - name: feeds-folder
+          mountPath: "/var/lib/twistlock/feeds"
+          readOnly: true # in SaaS the feed folder is shared between the agent running on each node and all the consoles in the node, make sure consoles can't override or create files in this folder
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock/forensic"
+          subPath: forensic
+        {{- else }}
+        - name: twistlock-config-volume
+          mountPath: "/data/config/"
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock"
+          subPath: "var/lib/twistlock"
+        - name: console-persistent-volume
+          mountPath: "/var/lib/twistlock-backup"
+          subPath: "var/lib/twistlock-backup"
+        {{- end}}
+        {{- if .Values.secrets }}
+        - name: portal-secrets-volume
+          mountPath: /var/lib/twistlock/secrets/
+          readOnly: true
+        {{- end}}
+        - name: syslog-socket
+          mountPath: "/dev/log"
+      {{- if .Values.nodeLabels }}
+      nodeSelector:
+        {{- range $i := .Values.nodeLabels}}
+        {{ $i -}}
+        {{- end}}
+      {{- end}}
+      volumes:
+      - name: console-persistent-volume
+        {{- if .Values.host }}
+        hostPath:
+          path: "/"
+        {{- else}}
+        persistentVolumeClaim:
+          claimName: "{{ .Values.pvc }}"
+        {{- end }}
+      {{- if .Values.SAAS_DEPLOYMENT }}
+      - name: console-temp-volume
+        emptyDir: {}
+      - name: feeds-folder
+        hostPath:
+          path: "/var/lib/twistlock/feeds"
+      {{- else }}
+      - name: twistlock-config-volume
+        configMap:
+          name: twistlock-console
+      {{- end }}
+      - name: syslog-socket
+        hostPath:
+          path: "/dev/log"
+      {{- if .Values.secrets }}
+      - name: portal-secrets-volume
+        secret:
+          secretName: twistlock-console
+          defaultMode: 256
+      {{- end}}

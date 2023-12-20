@@ -1,0 +1,82 @@
+AGENTLESS_MAX_CONCURRENT_SCAN_RESULTS: 70
+AGENTLESS_MAX_SCAN_WORKERS: 20
+AGENTLESS_MAX_SCANNER_LOGS: 6000
+AGENTLESS_SCANNER_MAX_LIFETIME_SECONDS: 2700
+COMMUNICATION_PORT: "8084"
+CONSOLE_CN: ""
+DATA_FOLDER: /var/lib/twistlock
+DATA_RECOVERY_ENABLED: "true"
+DATA_RECOVERY_VOLUME: /var/lib/twistlock-backup
+DEFENDER_CN: ""
+DISABLE_CONSOLE_CGROUP_LIMITS: "false"
+DOCKER_SOCKET: /var/run/docker.sock
+DOCKER_TWISTLOCK_TAG: _32_00_159
+FIPS_ENABLED: "false"
+LAUNCH_DARKLY_API_KEY: ""
+MANAGEMENT_PORT_HTTP: ""
+MANAGEMENT_PORT_HTTPS: "8083"
+PKI_CA_CHAIN: /var/lib/twistlock/secrets/ca_chain.pem
+READ_ONLY_FS: "true"
+RUN_CONSOLE_AS_ROOT: "false"
+SELINUX_LABEL: disable
+SYSTEMD_ENABLED: "false"
+consoleImageName: 
+deploymentMethod: Deployment
+limitCPU: 0
+limitMemory: 0
+namespace: twistlock
+openshift: false
+persistentVolumeStorage: 100Gi
+privileged: false
+pvc: twistlock-console
+secrets: []
+selinux-type: ""
+annotation:
+serviceType: 
+storageClassName: gp2
+encrypted: "true"
+twistlock_cfg: '"#  _____          _     _   _            _    \n# |_   _|_      _(_)___|
+  |_| | ___   ___| | __  \n#   | | \\ \\ /\\ / / / __| __| |/ _ \\ / __| |/ /      \n#   |
+  |  \\ V  V /| \\__ \\ |_| | (_) | (__|   <       \n#   |_|   \\_/\\_/ |_|___/\\__|_|\\___/
+  \\___|_|\\_\\\\     \n\n# This configuration file contains the setup parameters
+  for Twistlock\n# This file is typically stored in the same directory as the installation
+  script (twistlock.sh)\n# To reconfigure settings, update this configuration file
+  and re-run twistlock.sh; state and unchanged settings will persist\n\n\n\n#############################################\n#     Network
+  configuration\n#############################################\n# Each port must be
+  set to a unique value (multiple services cannot share the same port)\n###### Management
+  Console ports #####\n# Sets the ports that the Twistlock management website listens
+  on\n# The system that you use to configure Twistlock must be able to connect to
+  the Twistlock Console on these ports\n# To enable the HTTP listener, set the value
+  of MANAGEMENT_PORT_HTTP (e.g. MANAGEMENT_PORT_HTTP=8081)\n# Accessing Console over
+  plain, unencrypted HTTP isn''t recommended, as sensitive information can be exposed\nMANAGEMENT_PORT_HTTP=\nMANAGEMENT_PORT_HTTPS=8083\n\n#####
+  Inter-system communication port ##### \n# Sets the port for communication between
+  the Defender(s) and the Console\nCOMMUNICATION_PORT=8084\n\n##### Certificate common
+  names (optional) #####\n# Determines how to construct the CN in the Console''s certificate\n#
+  This value should not be modified unless instructed to by Twistlock Support\nCONSOLE_CN=$(hostname
+  --fqdn 2>/dev/null); if [[ $? == 1 ]]; then CONSOLE_CN=$(hostname); fi\n# Determines
+  how to construct the CN in the Defenders'' certificates\n# Each Defender authenticates
+  to the Console with this certificate and each cert must have a unique CN\n# These
+  values should not be modified unless instructed to by Twistlock Support\nDEFENDER_CN=${DEFENDER_CN:-}\n\n#############################################\n#     Twistlock
+  system configuration\n#############################################\n###### Data
+  recovery #####\n# Data recovery automatically exports the full Twistlock configuration
+  to the specified path every 24 hours\n# Daily, weekly, and monthly snapshots are
+  retained\n# The exported configuration can be stored on durable storage or backed
+  up remotely with other tools\n# Sets data recovery state (enabled or disabled)\nDATA_RECOVERY_ENABLED=true\n#
+  Sets the directory to which Twistlock data is exported\nDATA_RECOVERY_VOLUME=/var/lib/twistlock-backup\n\n#####
+  Read only containers #####\n# Sets Twistlock containers'' file-systems to read-only\nREAD_ONLY_FS=true\n\n#####
+  Storage paths #####\n# Sets the base directory to store Twistlock local data (db
+  and log files)\nDATA_FOLDER=/var/lib/twistlock\n\n##### Docker socket #####\n# Sets
+  the location of the Docker socket file\nDOCKER_SOCKET=${DOCKER_SOCKET:-/var/run/docker.sock}\n\n####
+  systemd configuration ####\n# Installs Twistlock as systemd service\nSYSTEMD_ENABLED=${SYSTEMD_ENABLED:-false}\n\n####
+  userid configuration ####\n# Run Twistlock Console processes as root (default, twistlock
+  user account)\n# Typically used to run Console on standard (tcp/443) privileged
+  port for TLS\nRUN_CONSOLE_AS_ROOT=${RUN_CONSOLE_AS_ROOT:-false}\n\n#### SELinux
+  configuration ####\n# If SELinux is enabled in dockerd, enable running Twistlock
+  Console and Defender with a dedicated SELinux label\n# See https://docs.docker.com/engine/reference/run/#security-configuration\nSELINUX_LABEL=disable\n\n#####
+  FIPS configuration #####\n# Forces Console and Defender to use FIPS-compliant cryptography,
+  https://csrc.nist.gov/projects/cryptographic-module-validation-program\nFIPS_ENABLED=false\n\n####
+  Console cgroup limits ####\n# Controls console container''s resource constraints.
+  Set to \"true\" to run without limits.\n# See https://docs.docker.com/engine/reference/run/#runtime-constraints-on-resources\nDISABLE_CONSOLE_CGROUP_LIMITS=false\n\n#############################################\n#      Twistlock
+  repository configuration\n#############################################\n# Sets
+  the version tag of the Twistlock containers\n# Do not modify unless instructed to
+  by Twistlock Support\nDOCKER_TWISTLOCK_TAG=_32_00_159\n"'

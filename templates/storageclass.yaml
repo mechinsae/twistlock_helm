@@ -1,0 +1,14 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ .Values.storageClassName }}
+parameters:
+  fsType: ext4
+  type: gp2
+  {{- if .Values.encrypted }}
+  encrypted: "true"
+  {{- end }}
+provisioner: kubernetes.io/aws-ebs
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+
