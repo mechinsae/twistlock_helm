@@ -4,10 +4,10 @@ metadata:
   labels:
     name: console
   name: twistlock-console
-  {{- if .Values.annotations }}
+{{- if .Values.annotations }}
   annotations:
-    {{ toYaml .Values.annotations | indent 4 }}
-  {{- end }}
+{{ toYaml .Values.annotations | indent 4 }}
+{{- end }}
   namespace: {{ .Values.namespace }}
 spec:
 {{- if .Values.loadBalancerSourceRanges }}
