@@ -31,7 +31,7 @@ privileged: false
 pvc: twistlock-console
 secrets: []
 selinux-type: ""
-annotation:
+annotations:
 serviceType: 
 storageClassName: gp2
 encrypted: "true"
